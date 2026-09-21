@@ -11,7 +11,7 @@ export default function LoginForm(){
     }catch(e:any){setError(e.message||"Login gagal");}finally{setLoading(false);}
   }
   return <div className="loginBox">
-    <div className="loginMiniBrand">YOUR AOL DASHBOARD</div>
+    <div className="loginMiniBrand">AOL INSIGHT</div>
     <h2>Selamat datang</h2><p className="loginSub">Masukkan email dan password untuk mengakses dashboard.</p>
     {error&&<div className="loginError">{error}</div>}
     <form onSubmit={submit} className="loginForm">

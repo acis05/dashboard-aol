@@ -1,53 +1,85 @@
-# Your AOL Dashboard v4
+# AOL Insight v5
 
-Versi ini siap untuk alur: **Login aplikasi → Koneksi Accurate OAuth → pilih database → grafik omzet/biaya/laba rugi**.
+**Custom Insights from Accurate Online**
 
-## Fitur
-- Halaman login email + password
-- Admin panel untuk membuat akun USER / ADMIN
-- Password di-hash dengan scrypt, tidak disimpan sebagai plain text
-- PostgreSQL untuk menyimpan user aplikasi
-- OAuth 2.0 Accurate Online setelah user login
-- Menu Koneksi Accurate
-- Menu Omzet per Bulan + filter tanggal
-- Menu Biaya per Bulan + filter tanggal + pilih akun biaya
-- Menu Laba Rugi per Bulan + filter tanggal
-- UI modern dengan logo Your AOL Dashboard
+Aplikasi dashboard web untuk membaca data Accurate Online melalui OAuth dan menampilkan insight keuangan dalam grafik yang lebih fleksibel.
+
+## Fitur MVP
+
+- Login aplikasi menggunakan email + password
+- Admin dapat membuat user aplikasi
+- OAuth Accurate Online
+- Pilih database Accurate setelah OAuth
+- Grafik omzet per bulan
+- Grafik biaya per bulan + pilihan akun biaya
+- Grafik laba rugi per bulan
+- Filter tanggal terpisah pada setiap grafik
+- Branding AOL Insight
+- Siap deploy ke Railway
 
 ## Deploy ke Railway
-1. Upload isi project ini ke GitHub.
-2. Railway → New Project → Deploy from GitHub.
-3. Tambahkan **PostgreSQL** di project Railway yang sama. Railway biasanya menyediakan `DATABASE_URL` otomatis ke service aplikasi; jika belum, referensikan variable PostgreSQL ke service aplikasi.
-4. Isi Variables aplikasi:
+
+1. Upload semua isi project ini ke repository GitHub.
+2. Di Railway, buat **New Project → Deploy from GitHub Repo**.
+3. Tambahkan service **PostgreSQL** di project Railway yang sama.
+4. Pastikan service aplikasi mendapatkan `DATABASE_URL` dari PostgreSQL.
+5. Tambahkan Variables berikut pada service aplikasi:
 
 ```env
-ADMIN_EMAIL=admin@perusahaan.com
-ADMIN_PASSWORD=PASSWORD_ADMIN_ANDA
-APP_SECRET=STRING_RANDOM_MINIMAL_32_KARAKTER
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 
-ACCURATE_CLIENT_ID=...
-ACCURATE_CLIENT_SECRET=...
-ACCURATE_REDIRECT_URI=https://DOMAIN-RAILWAY-ANDA/api/oauth/callback
+ADMIN_EMAIL=admin@perusahaan.com
+ADMIN_PASSWORD=GANTI_PASSWORD_ADMIN_YANG_KUAT
+
+APP_SECRET=GANTI_DENGAN_STRING_RANDOM_MINIMAL_32_KARAKTER
+
+ACCURATE_CLIENT_ID=CLIENT_ID_DARI_ACCURATE_DEVELOPER
+ACCURATE_CLIENT_SECRET=CLIENT_SECRET_DARI_ACCURATE_DEVELOPER
+ACCURATE_REDIRECT_URI=https://DOMAIN-RAILWAY-ANDA.up.railway.app/api/oauth/callback
 ACCURATE_SCOPE=glaccount_view journal_voucher_view
+
 MAX_JOURNALS_PER_LOAD=250
 ```
 
-5. Di Accurate Developer, OAuth Callback URL harus sama persis dengan `ACCURATE_REDIRECT_URI`.
-6. Redeploy.
-7. Buka domain Railway → halaman pertama adalah Login.
-8. Login menggunakan `ADMIN_EMAIL` + `ADMIN_PASSWORD`.
-9. Untuk membuat user lain: sidebar → **Kelola User**.
-10. Untuk Accurate: sidebar → **Koneksi Accurate** → Connect Accurate Online → pilih database.
+> Nama service PostgreSQL di Railway bisa berbeda. Jika variable reference `${{Postgres.DATABASE_URL}}` tidak cocok, gunakan menu **Add Reference** pada Variables dan pilih `DATABASE_URL` dari service PostgreSQL Anda.
 
-## Catatan admin pertama
-Akun admin bootstrap dibuat otomatis saat proses login pertama jika belum ada user ber-role ADMIN di database. Setelah admin sudah ada, perubahan ADMIN_EMAIL / ADMIN_PASSWORD di environment tidak otomatis mengganti password admin lama.
+## Callback OAuth Accurate
 
-## Jika ada error
-Kirim screenshot/log Railway saja. Jangan kirim `ACCURATE_CLIENT_SECRET`, token OAuth, password admin, atau `DATABASE_URL`.
+Setelah Railway memberikan domain publik, misalnya:
 
+```text
+https://aol-insight-production.up.railway.app
+```
 
-## Railway build note
-`*.tsbuildinfo` is intentionally ignored and removed before builds to avoid BuildKit mount conflicts on Railway.
+maka isi callback URL di Accurate Developer dengan tepat:
 
-## Railway v4.2 build fix
-This version intentionally does not delete `.next` during the Nixpacks build phase. Railway mounts `.next/cache` as a build cache, so removing `.next` can fail with `Device or resource busy`. The build command is simply `npm run build`.
+```text
+https://aol-insight-production.up.railway.app/api/oauth/callback
+```
+
+Nilai yang sama harus digunakan untuk `ACCURATE_REDIRECT_URI` di Railway.
+
+## Login admin pertama
+
+Saat database user masih kosong, akun admin pertama akan dibuat otomatis dari:
+
+```env
+ADMIN_EMAIL=...
+ADMIN_PASSWORD=...
+```
+
+Setelah berhasil login, admin dapat membuat user lain melalui menu **Kelola User**.
+
+## Flow aplikasi
+
+```text
+Login AOL Insight
+  → Koneksi Accurate
+  → OAuth Accurate Online
+  → Pilih database Accurate
+  → Dashboard / grafik
+```
+
+## Catatan keamanan
+
+Jangan membagikan `ACCURATE_CLIENT_SECRET`, `APP_SECRET`, `ADMIN_PASSWORD`, token OAuth, atau `DATABASE_URL` ke chat publik atau repository GitHub. Simpan semuanya hanya di Railway Variables.

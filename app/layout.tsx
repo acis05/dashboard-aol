@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Your AOL Dashboard",
-  description: "Custom financial dashboard for Accurate Online"
+  title: "AOL Insight",
+  description: "Custom Insights from Accurate Online"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

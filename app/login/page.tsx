@@ -10,7 +10,7 @@ export default async function LoginPage() {
     <section className="loginVisual">
       <div className="loginGlow glowOne"/><div className="loginGlow glowTwo"/>
       <div className="brandStory">
-        <Image src="/your-aol-dashboard-logo.png" width={490} height={145} alt="Your AOL Dashboard" className="loginLogo" priority/>
+        <Image src="/aol-insight-logo.png" width={520} height={205} alt="AOL Insight" className="loginLogo" priority/>
         <div className="loginEyebrow">FINANCIAL ANALYTICS FOR ACCURATE ONLINE</div>
         <h1>Data bisnis yang lebih mudah dibaca, dalam satu dashboard.</h1>
         <p>Masuk untuk melihat omzet, biaya, dan laba rugi dari database Accurate Online Anda.</p>
