@@ -62,3 +62,6 @@ Kalau error, copy teks error/JSON response lalu kirim ke ChatGPT. Jangan kirim t
 Dashboard ini menarik `journal-voucher/detail.do` satu per satu (concurrency 4), jadi belum cocok untuk database besar. `MAX_JOURNALS_PER_LOAD` sengaja default 200 agar aman untuk tes awal.
 
 Setelah response nyata Accurate sudah cocok, versi berikutnya sebaiknya memakai PostgreSQL + incremental sync agar jauh lebih cepat dan hemat API call.
+
+## Railway security scan
+This release pins Next.js to `15.3.8` to satisfy Railway's security scanner for the vulnerabilities reported against Next.js 15.3.2.
