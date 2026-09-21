@@ -1,8 +1,10 @@
+import { requireApiUser, apiError } from "../../../../lib/api-auth";
 import { NextResponse } from "next/server";
 import { getOAuthState } from "../../../../lib/session";
 import { listDatabases } from "../../../../lib/accurate";
 export const dynamic = "force-dynamic";
 export async function GET() {
+  try { await requireApiUser(); } catch(e:any) { return apiError(e); }
   try {
     const s = await getOAuthState();
     if (!s?.accessToken) return NextResponse.json({ connected:false, databaseConnected:false, databases:[] });

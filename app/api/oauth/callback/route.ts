@@ -1,3 +1,4 @@
+import { requireApiUser, apiError } from "../../../../lib/api-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeCode } from "../../../../lib/accurate";
 import { setOAuthState } from "../../../../lib/session";
@@ -5,6 +6,7 @@ import { setOAuthState } from "../../../../lib/session";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  try { await requireApiUser(); } catch(e:any) { return apiError(e); }
   try {
     const code = req.nextUrl.searchParams.get("code");
     const returnedState = req.nextUrl.searchParams.get("state");

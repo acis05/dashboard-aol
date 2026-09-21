@@ -1,7 +1,9 @@
+import { requireApiUser, apiError } from "../../../../lib/api-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { getJournalDetail } from "../../../../lib/accurate";
 export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
+  try { await requireApiUser(); } catch(e:any) { return apiError(e); }
   try {
     const id = Number(new URL(req.url).searchParams.get("id"));
     if (!id) return NextResponse.json({ ok: false, error: "Isi ?id=ID_JURNAL" }, { status: 400 });

@@ -1,9 +1,11 @@
+import { requireApiUser, apiError } from "../../../lib/api-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { buildDashboard } from "../../../lib/analytics";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  try { await requireApiUser(); } catch(e:any) { return apiError(e); }
   try {
     const { searchParams } = new URL(req.url);
     const from = searchParams.get("from") || `${new Date().getFullYear()}-01-01`;
