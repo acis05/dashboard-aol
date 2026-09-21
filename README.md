@@ -1,67 +1,31 @@
-# Your AOL Dashboard — Railway Simple
+# Your AOL Dashboard — Railway OAuth MVP
 
-Versi percobaan yang sengaja dibuat **tanpa database** agar mudah dites. Dashboard membaca Accurate Online langsung dari server Next.js.
+Dashboard read-only untuk Accurate Online menggunakan OAuth 2.0 Authorization Code.
 
-## Fitur
+## Deploy ke Railway
+1. Upload seluruh isi project ini ke repository GitHub.
+2. Railway → New Project → Deploy from GitHub Repo.
+3. Setelah Railway memberi domain publik, salin domain tersebut.
+4. Di Accurate Online Developer, set **OAuth Callback URL** menjadi:
+   `https://DOMAIN-RAILWAY-ANDA/api/oauth/callback`
+5. Di Railway → Variables isi:
+   - `ACCURATE_CLIENT_ID`
+   - `ACCURATE_CLIENT_SECRET`
+   - `ACCURATE_REDIRECT_URI` = URL callback yang sama persis
+   - `ACCURATE_SCOPE` = `glaccount_view journal_voucher_view`
+   - `APP_SECRET` = string acak panjang
+   - `MAX_JOURNALS_PER_LOAD` = `250`
+6. Redeploy.
+7. Buka aplikasi → klik **Connect Accurate Online** → login Accurate → Beri Akses → pilih database.
 
-- Total omzet per bulan (`REVENUE`)
-- Biaya per bulan (`EXPENSE` / `OTHER_EXPENSE`) dan pilihan akun
-- Laba rugi per bulan (`REVENUE`, `COGS`, `EXPENSE`, `OTHER_INCOME`, `OTHER_EXPENSE`)
-- Endpoint diagnostik supaya error dari Accurate gampang dilihat
-- Logo Your AOL Dashboard yang sudah disetujui
+## Penting
+`account.accurate.id` adalah host untuk OAuth, db-list, dan open-db. Setelah open-db, Accurate mengembalikan `host` dan `session` untuk database yang dipilih. Aplikasi menyimpan keduanya otomatis dan memanggil data API lewat `<host>/accurate/api/...`.
 
-## 1. Masukkan ke GitHub
+## Grafik
+Setiap grafik memiliki filter tanggalnya sendiri:
+- Total Omzet per Bulan
+- Laba Rugi per Bulan
+- Biaya per Bulan + multi-select akun biaya
 
-1. Buat repository baru di GitHub, misalnya `your-aol-dashboard`.
-2. Upload seluruh isi folder project ini ke repository (jangan upload zip-nya sebagai satu file; isi zip harus diekstrak dulu).
-3. Pastikan `package.json` berada di root repository.
-
-## 2. Deploy ke Railway
-
-1. Login Railway.
-2. **New Project → Deploy from GitHub Repo**.
-3. Pilih repo `your-aol-dashboard`.
-4. Railway akan mendeteksi Next.js dan menjalankan `npm run build` lalu `npm start`.
-5. Di Railway buka **Variables**, isi:
-
-```env
-ACCURATE_API_HOST=https://HOST-ACCURATE-ANDA
-ACCURATE_ACCESS_TOKEN=TOKEN-ANDA
-ACCURATE_SESSION_ID=SESSION-ANDA
-MAX_JOURNALS_PER_LOAD=200
-```
-
-`ACCURATE_SESSION_ID` boleh dikosongkan bila metode autentikasi Anda tidak memerlukannya. Token/session jangan pernah ditaruh di source code atau GitHub.
-
-## 3. Tes koneksi paling sederhana
-
-Setelah Railway memberi domain, buka:
-
-```text
-https://DOMAIN-RAILWAY-ANDA/api/diagnostics/accounts
-```
-
-Jika berhasil, akan keluar JSON dari `glaccount/list.do`.
-
-Lalu tes:
-
-```text
-https://DOMAIN-RAILWAY-ANDA/api/diagnostics/journals
-```
-
-Kalau response jurnal memberikan `id`, tes detail jurnal:
-
-```text
-https://DOMAIN-RAILWAY-ANDA/api/diagnostics/journal-detail?id=ID_JURNAL
-```
-
-Kalau error, copy teks error/JSON response lalu kirim ke ChatGPT. Jangan kirim token/session.
-
-## Catatan versi percobaan
-
-Dashboard ini menarik `journal-voucher/detail.do` satu per satu (concurrency 4), jadi belum cocok untuk database besar. `MAX_JOURNALS_PER_LOAD` sengaja default 200 agar aman untuk tes awal.
-
-Setelah response nyata Accurate sudah cocok, versi berikutnya sebaiknya memakai PostgreSQL + incremental sync agar jauh lebih cepat dan hemat API call.
-
-## Railway security scan
-This release pins Next.js to `15.3.8` to satisfy Railway's security scanner for the vulnerabilities reported against Next.js 15.3.2.
+## MVP
+Versi ini membaca jurnal langsung dari Accurate dan membatasi jumlah jurnal per load. Untuk data besar, versi berikutnya sebaiknya memakai PostgreSQL + incremental sync.
