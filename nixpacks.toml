@@ -5,7 +5,7 @@ nixPkgs = ["nodejs_22", "npm-10_x"]
 cmds = ["npm ci || npm install"]
 
 [phases.build]
-cmds = ["rm -rf .next *.tsbuildinfo && npm run build"]
+cmds = ["npm run build"]
 
 [start]
 cmd = "npm start"

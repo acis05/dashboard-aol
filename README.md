@@ -48,3 +48,6 @@ Kirim screenshot/log Railway saja. Jangan kirim `ACCURATE_CLIENT_SECRET`, token 
 
 ## Railway build note
 `*.tsbuildinfo` is intentionally ignored and removed before builds to avoid BuildKit mount conflicts on Railway.
+
+## Railway v4.2 build fix
+This version intentionally does not delete `.next` during the Nixpacks build phase. Railway mounts `.next/cache` as a build cache, so removing `.next` can fail with `Device or resource busy`. The build command is simply `npm run build`.
