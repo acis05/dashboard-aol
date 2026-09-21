@@ -44,3 +44,7 @@ Akun admin bootstrap dibuat otomatis saat proses login pertama jika belum ada us
 
 ## Jika ada error
 Kirim screenshot/log Railway saja. Jangan kirim `ACCURATE_CLIENT_SECRET`, token OAuth, password admin, atau `DATABASE_URL`.
+
+
+## Railway build note
+`*.tsbuildinfo` is intentionally ignored and removed before builds to avoid BuildKit mount conflicts on Railway.
