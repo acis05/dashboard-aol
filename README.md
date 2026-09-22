@@ -98,3 +98,11 @@ ACCURATE_REDIRECT_URI=https://aol-insight-production.up.railway.app/api/oauth/ca
 ```
 
 Nilai callback yang sama harus didaftarkan di Accurate Developer.
+
+## v5.2 - Perbaikan pembacaan detail jurnal Accurate
+Response `journal-voucher/detail.do` Accurate menaruh nomor akun dan tipe akun di object `glAccount`, bukan pada field `accountNo` langsung. v5.2 membaca `glAccount.no`, `glAccount.accountType`, `accountNoRef`, `debitAmount`, `creditAmount`, dan `amountType`.
+
+Untuk tes mapper setelah deploy:
+`/api/diagnostics/journal-mapped?id=400`
+
+Jika benar, response akan menampilkan lineCount > 0 dan baris seperti REVENUE / COGS.

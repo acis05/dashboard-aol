@@ -26,8 +26,12 @@ export type JournalHeader = {
 export type JournalLine = {
   id?: number;
   accountNo: string;
+  accountName?: string;
+  accountType?: AccountType;
   amount: number;
   amountType: "DEBIT" | "CREDIT";
+  debitAmount?: number;
+  creditAmount?: number;
   memo?: string;
   departmentName?: string;
   projectNo?: string;

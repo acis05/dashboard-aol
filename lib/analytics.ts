@@ -4,8 +4,16 @@ import { MonthlyRow } from "./types";
 function isoMonth(value?: string) {
   if (!value) return null;
   if (/^\d{4}-\d{2}/.test(value)) return value.slice(0, 7);
-  const m = value.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
-  return m ? `${m[3]}-${m[2]}` : null;
+  let m = value.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) return `${m[3]}-${m[2]}`;
+  // Accurate juga dapat mengembalikan format display seperti "22 Sep 2026".
+  const display = value.match(/^(\d{1,2})\s+([A-Za-z]{3})\s+(\d{4})$/);
+  if (display) {
+    const months: Record<string,string> = {jan:"01",feb:"02",mar:"03",apr:"04",may:"05",jun:"06",jul:"07",aug:"08",sep:"09",oct:"10",nov:"11",dec:"12"};
+    const mm = months[display[2].toLowerCase()];
+    if (mm) return `${display[3]}-${mm}`;
+  }
+  return null;
 }
 
 export async function buildDashboard(from: string, to: string, selectedExpenseAccounts: string[]) {
@@ -18,23 +26,30 @@ export async function buildDashboard(from: string, to: string, selectedExpenseAc
   const rows = new Map<string, MonthlyRow>();
   const expenseSeries = new Map<string, Map<string, number>>();
   const maxConcurrent = 4;
+  let mappedLineCount = 0;
 
   for (let i = 0; i < headers.length; i += maxConcurrent) {
     const batch = headers.slice(i, i + maxConcurrent);
     const details = await Promise.all(batch.map(async (h) => ({ h, d: await getJournalDetail(h.id) })));
+
     for (const { h, d } of details) {
-      const month = isoMonth(h.transDate || d.header?.transDate);
+      const month = isoMonth(h.transDate || d.header?.transDate || d.header?.transDateView);
       if (!month) continue;
       if (!rows.has(month)) rows.set(month, blankRow(month));
       const row = rows.get(month)!;
 
       for (const line of d.lines) {
-        const account = accountByNo.get(line.accountNo);
-        if (!account) continue;
+        mappedLineCount += 1;
+        // Prefer accountType langsung dari response jurnal; fallback ke master akun.
+        const master = accountByNo.get(line.accountNo);
+        const accountType = line.accountType || master?.accountType;
+        if (!accountType) continue;
+        const accountNo = master?.no || line.accountNo;
+
         const signedIncome = line.amountType === "CREDIT" ? line.amount : -line.amount;
         const signedExpense = line.amountType === "DEBIT" ? line.amount : -line.amount;
 
-        switch (account.accountType) {
+        switch (accountType) {
           case "REVENUE": row.revenue += signedIncome; break;
           case "COGS": row.cogs += signedExpense; break;
           case "EXPENSE": row.expense += signedExpense; break;
@@ -42,20 +57,22 @@ export async function buildDashboard(from: string, to: string, selectedExpenseAc
           case "OTHER_EXPENSE": row.otherExpense += signedExpense; break;
         }
 
-        if (["EXPENSE", "OTHER_EXPENSE"].includes(account.accountType) && selected.has(account.no)) {
+        if (["EXPENSE", "OTHER_EXPENSE"].includes(accountType) && selected.has(accountNo)) {
           if (!expenseSeries.has(month)) expenseSeries.set(month, new Map());
           const monthMap = expenseSeries.get(month)!;
-          monthMap.set(account.no, (monthMap.get(account.no) || 0) + signedExpense);
+          monthMap.set(accountNo, (monthMap.get(accountNo) || 0) + signedExpense);
         }
       }
     }
   }
 
-  const monthly = [...rows.values()].sort((a, b) => a.month.localeCompare(b.month)).map((r) => ({
-    ...r,
-    grossProfit: r.revenue - r.cogs,
-    netProfit: r.revenue + r.otherIncome - r.cogs - r.expense - r.otherExpense
-  }));
+  const monthly = [...rows.values()]
+    .sort((a, b) => a.month.localeCompare(b.month))
+    .map((r) => ({
+      ...r,
+      grossProfit: r.revenue - r.cogs,
+      netProfit: r.revenue + r.otherIncome - r.cogs - r.expense - r.otherExpense
+    }));
 
   const expenses = monthly.map((m) => {
     const result: Record<string, string | number> = { month: m.month };
@@ -70,8 +87,9 @@ export async function buildDashboard(from: string, to: string, selectedExpenseAc
     expenses,
     meta: {
       journalCount: headers.length,
-      maxJournals: Number(process.env.MAX_JOURNALS_PER_LOAD || 200),
-      detailMapperFound: monthly.length > 0
+      mappedLineCount,
+      maxJournals: Number(process.env.MAX_JOURNALS_PER_LOAD || 1000),
+      detailMapperFound: mappedLineCount > 0
     }
   };
 }

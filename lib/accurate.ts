@@ -120,30 +120,96 @@ export async function getAccounts(): Promise<Account[]> {
 }
 
 export async function getJournalHeaders(from: string, to: string): Promise<JournalHeader[]> {
-  const max = Math.max(1, Number(process.env.MAX_JOURNALS_PER_LOAD || 250));
-  const pageSize = Math.min(max, 1000);
-  const body = await accurateGet("/api/journal-voucher/list.do", {
-    fields: "id,number,transDate,branchId,branchName,description",
-    "filter.transDate.op": "BETWEEN", "filter.transDate.val[0]": toAccurateDate(from), "filter.transDate.val[1]": toAccurateDate(to),
-    "sp.page": 1, "sp.pageSize": pageSize, "sp.sort": "transDate|asc"
-  });
-  return unwrapList(body).filter((x) => x?.id).slice(0, max).map((x) => ({
-    id: Number(x.id), number: x.number ? String(x.number) : undefined, transDate: x.transDate ? String(x.transDate) : undefined,
-    branchId: x.branchId ? Number(x.branchId) : undefined, branchName: x.branchName ? String(x.branchName) : undefined,
-    description: x.description ? String(x.description) : undefined
-  }));
+  const max = Math.max(1, Number(process.env.MAX_JOURNALS_PER_LOAD || 1000));
+  const pageSize = Math.min(max, 100);
+  const result: JournalHeader[] = [];
+  let page = 1;
+  let pageCount = 1;
+
+  do {
+    const body = await accurateGet("/api/journal-voucher/list.do", {
+      fields: "id,number,transDate,branchId,branchName,description",
+      "filter.transDate.op": "BETWEEN",
+      "filter.transDate.val[0]": toAccurateDate(from),
+      "filter.transDate.val[1]": toAccurateDate(to),
+      "sp.page": page,
+      "sp.pageSize": pageSize,
+      "sp.sort": "transDate|asc"
+    });
+
+    const list = unwrapList(body);
+    for (const x of list) {
+      if (!x?.id) continue;
+      result.push({
+        id: Number(x.id),
+        number: x.number ? String(x.number) : (x.transNumber ? String(x.transNumber) : undefined),
+        transDate: x.transDate ? String(x.transDate) : (x.transDateView ? String(x.transDateView) : undefined),
+        branchId: x.branchId ? Number(x.branchId) : undefined,
+        branchName: x.branchName ? String(x.branchName) : undefined,
+        description: x.description ? String(x.description) : undefined
+      });
+      if (result.length >= max) break;
+    }
+
+    pageCount = Number(body?.sp?.pageCount || body?.data?.sp?.pageCount || 1) || 1;
+    page += 1;
+  } while (page <= pageCount && result.length < max);
+
+  return result;
 }
 
 export async function getJournalDetail(id: number): Promise<{ header: any; lines: JournalLine[]; raw: any }> {
   const body = await accurateGet("/api/journal-voucher/detail.do", { id });
   const detail = unwrapDetail(body);
-  const candidateArrays = [detail?.detailJournalVoucher, detail?.detailJournalVoucherList, detail?.details, detail?.detail, detail?.journalVoucherDetail, detail?.journalVoucherDetails];
+  const candidateArrays = [
+    detail?.detailJournalVoucher,
+    detail?.detailJournalVoucherList,
+    detail?.details,
+    detail?.detail,
+    detail?.journalVoucherDetail,
+    detail?.journalVoucherDetails
+  ];
   const rawLines = candidateArrays.find(Array.isArray) || [];
-  const lines: JournalLine[] = rawLines.filter((x: any) => x?.accountNo && x?.amount !== undefined && x?.amountType).map((x: any) => ({
-    id: Number(x.id) || undefined, accountNo: String(x.accountNo), amount: Number(x.amount || 0),
-    amountType: String(x.amountType).toUpperCase() === "CREDIT" ? "CREDIT" : "DEBIT", memo: x.memo ? String(x.memo) : undefined,
-    departmentName: x.departmentName ? String(x.departmentName) : undefined, projectNo: x.projectNo ? String(x.projectNo) : undefined
-  }));
+
+  const lines: JournalLine[] = rawLines
+    .map((x: any) => {
+      // Response detail Accurate tidak memakai field accountNo langsung.
+      // Nomor akun tersedia pada glAccount.no / accountNoRef.
+      const accountNo = x?.glAccount?.no ?? x?.accountNoRef ?? x?.accountNo;
+      const accountName = x?.glAccount?.name ?? x?.accountNameRef;
+      const accountType = x?.glAccount?.accountType;
+
+      const explicitDebit = x?.debitAmount != null ? Number(x.debitAmount) : undefined;
+      const explicitCredit = x?.creditAmount != null ? Number(x.creditAmount) : undefined;
+      let amountType = String(x?.amountType || "").toUpperCase();
+      if (amountType !== "DEBIT" && amountType !== "CREDIT") {
+        if ((explicitCredit || 0) !== 0) amountType = "CREDIT";
+        else if ((explicitDebit || 0) !== 0) amountType = "DEBIT";
+      }
+
+      let amount = Number(x?.amount ?? 0);
+      if (!Number.isFinite(amount) || amount === 0) {
+        amount = amountType === "CREDIT" ? Math.abs(explicitCredit || 0) : Math.abs(explicitDebit || 0);
+      }
+
+      if (!accountNo || !Number.isFinite(amount) || (amountType !== "DEBIT" && amountType !== "CREDIT")) return null;
+
+      return {
+        id: Number(x.id) || undefined,
+        accountNo: String(accountNo),
+        accountName: accountName ? String(accountName) : undefined,
+        accountType: accountType ? String(accountType) : undefined,
+        amount: Math.abs(amount),
+        amountType: amountType as "DEBIT" | "CREDIT",
+        debitAmount: explicitDebit,
+        creditAmount: explicitCredit,
+        memo: x.memo ? String(x.memo) : undefined,
+        departmentName: x.department?.name ? String(x.department.name) : (x.departmentName ? String(x.departmentName) : undefined),
+        projectNo: x.project?.no ? String(x.project.no) : (x.projectNo ? String(x.projectNo) : undefined)
+      } as JournalLine;
+    })
+    .filter(Boolean) as JournalLine[];
+
   return { header: detail, lines, raw: body };
 }
 
