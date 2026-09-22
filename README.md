@@ -40,7 +40,7 @@ ACCURATE_CLIENT_SECRET=CLIENT_SECRET_DARI_ACCURATE_DEVELOPER
 ACCURATE_REDIRECT_URI=https://DOMAIN-RAILWAY-ANDA.up.railway.app/api/oauth/callback
 ACCURATE_SCOPE=glaccount_view journal_voucher_view
 
-MAX_JOURNALS_PER_LOAD=250
+MAX_JOURNALS_PER_LOAD=1000
 ```
 
 > Nama service PostgreSQL di Railway bisa berbeda. Jika variable reference `${{Postgres.DATABASE_URL}}` tidak cocok, gunakan menu **Add Reference** pada Variables dan pilih `DATABASE_URL` dari service PostgreSQL Anda.
@@ -106,3 +106,10 @@ Untuk tes mapper setelah deploy:
 `/api/diagnostics/journal-mapped?id=400`
 
 Jika benar, response akan menampilkan lineCount > 0 dan baris seperti REVENUE / COGS.
+
+
+## v5.3
+- Grafik omzet diubah menjadi grafik batang.
+- Grafik laba rugi diubah menjadi grafik batang.
+- Halaman biaya menampilkan grafik batang bulanan + pie chart komposisi biaya.
+- Rekomendasi `MAX_JOURNALS_PER_LOAD=1000` untuk tahap awal.
