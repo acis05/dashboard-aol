@@ -1,4 +1,4 @@
-# AOL Insight v5
+# AOL Insight v5.1 v5
 
 **Custom Insights from Accurate Online**
 
@@ -26,6 +26,8 @@ Aplikasi dashboard web untuk membaca data Accurate Online melalui OAuth dan mena
 5. Tambahkan Variables berikut pada service aplikasi:
 
 ```env
+APP_URL=https://DOMAIN-RAILWAY-ANDA.up.railway.app
+
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 
 ADMIN_EMAIL=admin@perusahaan.com
@@ -83,3 +85,16 @@ Login AOL Insight
 ## Catatan keamanan
 
 Jangan membagikan `ACCURATE_CLIENT_SECRET`, `APP_SECRET`, `ADMIN_PASSWORD`, token OAuth, atau `DATABASE_URL` ke chat publik atau repository GitHub. Simpan semuanya hanya di Railway Variables.
+
+
+## Fix OAuth redirect Railway
+
+Versi 5.1 memperbaiki redirect setelah callback OAuth agar tidak kembali ke `localhost`.
+Pastikan `APP_URL` berisi domain publik Railway tanpa slash di akhir, misalnya:
+
+```env
+APP_URL=https://aol-insight-production.up.railway.app
+ACCURATE_REDIRECT_URI=https://aol-insight-production.up.railway.app/api/oauth/callback
+```
+
+Nilai callback yang sama harus didaftarkan di Accurate Developer.
